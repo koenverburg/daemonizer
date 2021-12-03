@@ -1,5 +1,4 @@
-# Daemonizer CLI
-> _This project is still a work in progress but the mvp is working_
+# Daemonizer CLI (WIP)
 
 Intro
 
