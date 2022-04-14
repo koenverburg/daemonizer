@@ -2,55 +2,56 @@ package utils
 
 import (
 	"fmt"
-	"reflect"
 
 	tmux "github.com/jubnzv/go-tmux"
 )
 
-func CreateTmuxSession() {
+func CreateServer(namespace string) (*tmux.Server, tmux.Session) {
 	server := new(tmux.Server)
 
 	// Check that "example" session already exists.
-	exists, err := server.HasSession("example")
+	exists, err := server.HasSession(namespace)
 	if err != nil {
-		msg := fmt.Errorf("Can't check 'example' session: %s", err)
+		msg := fmt.Errorf("Can't check '%s' session: %s", namespace, err)
 		fmt.Println(msg)
-		return
+		return nil, tmux.Session{}
 	}
 
 	if exists {
 		// Sure, you can use KillSession here.
-		fmt.Println("Session 'example' already exists!")
+		fmt.Printf("Session '%s' already exists!", namespace)
 		fmt.Println("Please stop it before running this demo.")
-		return
+		return nil, tmux.Session{}
 	}
 
 	// Prepare configuration for a new session with some windows.
-	session := tmux.Session{Name: "example-session"}
+	session := tmux.Session{Name: fmt.Sprintf("bg-%s", namespace)}
 
-	w1 := tmux.Window{Name: "first", Id: 0}
-	w2 := tmux.Window{Name: "second", Id: 1}
+	return server, session
 
-	session.AddWindow(w1)
-	session.AddWindow(w2)
+	// w1 := tmux.Window{Name: "first", Id: 0, StartDirectory:}
+	// w2 := tmux.Window{Name: "second", Id: 1}
+	//
+	// session.AddWindow(w1)
+	// session.AddWindow(w2)
+	//
+	// server.AddSession(session)
+	//
+	// sessions := []*tmux.Session{}
+	// sessions = append(sessions, &session)
 
-	server.AddSession(session)
-
-	sessions := []*tmux.Session{}
-	sessions = append(sessions, &session)
-
-	conf := tmux.Configuration{
-		Server:        server,
-		Sessions:      sessions,
-		ActiveSession: nil}
-
-	// Setup this configuration.
-	err = conf.Apply()
-	if err != nil {
-		msg := fmt.Errorf("Can't apply prepared configuration: %s", err)
-		fmt.Println(msg)
-		return
-	}
+	// conf := tmux.Configuration{
+	// 	Server:        server,
+	// 	Sessions:      sessions,
+	// 	ActiveSession: nil}
+	//
+	// // Setup this configuration.
+	// err = conf.Apply()
+	// if err != nil {
+	// 	msg := fmt.Errorf("Can't apply prepared configuration: %s", err)
+	// 	fmt.Println(msg)
+	// 	return
+	// }
 
 	// Attach to created session
 	// err = session.AttachSession()
@@ -61,30 +62,25 @@ func CreateTmuxSession() {
 	// }
 }
 
+func AddWindow(server *tmux.Server, session tmux.Session, directory string, cmd string, index int) {
+	window := tmux.Window{Name: cmd, Id: index, StartDirectory: directory}
 
-func getSessionInfo(session string, settings map[string]interface{}) []string {
-  for k, v := range settings {
-    if k == session {
-      return ConvertToStringSlice(v)
-    }
-  }
-  return nil
+	session.AddWindow(window)
+
+	server.AddSession(session)
 }
 
+func Start(server *tmux.Server, sessions []*tmux.Session) {
+	conf := tmux.Configuration{
+		Server:        server,
+		Sessions:      sessions,
+		ActiveSession: nil}
 
-func CreateTmuxWindows(name string, settings map[string]interface{}) {
-  // var session map[string]interface{}
-
-  for k := range settings {
-    if k == name {
-      // fmt.Println(v)
-      // fmt.Println(settings[k])
-      // fmt.Println(reflect.TypeOf(settings[k]).Kind())
-      win := reflect.ValueOf(settings[k])
-
-      // for i := 0; i < win.Len(); i++ {
-      //   fmt.Printf("%s", win.Index(i))
-      // }
-    }
-  }
+	// Setup this configuration.
+	err := conf.Apply()
+	if err != nil {
+		msg := fmt.Errorf("Can't apply prepared configuration: %s", err)
+		fmt.Println(msg)
+		return
+	}
 }
