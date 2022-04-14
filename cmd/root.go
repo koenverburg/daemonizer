@@ -19,7 +19,9 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/jubnzv/go-tmux"
 	"github.com/koenverburg/daemonizer/utils"
+	"github.com/mitchellh/mapstructure"
 	"github.com/spf13/cobra"
 
 	"github.com/spf13/viper"
@@ -27,23 +29,37 @@ import (
 
 var cfgFile string
 
+type Task struct {
+	Root     string   `mapstructure:"root"`
+	Commands []string `mapstructure:"commands"`
+}
+
+type Tasks map[string]Task
+
 var rootCmd = &cobra.Command{
 	Use:   "daemonizer",
 	Short: "A tool to start processes in a tmux session",
-	Long: "A tool to start processes in a tmux session",
+	Long:  "A tool to start processes in a tmux session",
 	Run: func(cmd *cobra.Command, args []string) {
-    settings := viper.AllSettings()
-    utils.CreateTmuxWindows("dotfiles", settings)
-    // fmt.Println(settings)
-    // utils.CreateTmuxSession()
+		// namespace := args[0]
 
-    // if commandSet == nil {
-    //   panic(fmt.Sprintf("No commands found for %s", args[0]))
-    // }
+		var tasks Tasks
+		settings := viper.AllSettings()
+		mapstructure.Decode(settings, &tasks)
 
-    // for _, command := range commandSet {
-    //   utils.RunCommand(command)
-    // }
+		namespace := "chk"
+		directory := tasks["chk"].Root
+		commands := tasks["chk"].Commands
+
+		server, session := utils.CreateServer(namespace)
+		sessions := []*tmux.Session{}
+
+		for k, v := range commands {
+			sessions = append(sessions, &session)
+			utils.AddWindow(server, session, directory, v, k)
+		}
+
+		utils.Start(server, sessions)
 	},
 }
 
@@ -69,7 +85,7 @@ func initConfig() {
 
 		// Search config in config directory with name ".daemonizer" (without extension).
 		viper.AddConfigPath(config)
-		viper.SetConfigName(".daemonizer")
+		viper.SetConfigName(".background")
 		viper.SetConfigType("yaml")
 	}
 
