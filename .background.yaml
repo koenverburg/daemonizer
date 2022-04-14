@@ -1,0 +1,6 @@
+chk:
+  root: ~/code/worktrees/checkout-bare/main
+  commands:
+    - echo "yarn start:dev:chk:backend"
+    - echo "yarn start:dev:chk:front:adidas"
+    - echo "yarn test | yarn test:integration"
